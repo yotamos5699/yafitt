@@ -61,3 +61,7 @@ def server_script():
 
 if __name__ == "__main__":
     server_script()
+
+
+# ריבוי משתמשים C
+# פונקציה כללית של כתיבה לDB
