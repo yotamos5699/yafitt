@@ -8,7 +8,7 @@ DISCONECTED_MESSAGE = 'DISCONECTED'
 Format = 'utf-8'
 
 
-Server = Socket(5001).server
+Server = Socket(5001).socket
 
 
 class Client_(TypedDict):
@@ -27,13 +27,15 @@ def spredMessage(message):
 
 
 def client_handler(connection, address):
+    print("קקי")
     Client = {
         "key": random.randomint(1, 50),
         "connection": connection,
         "address": address
     }
     Clients.append(Client)
-    Client['connection'].send("hi,this is a key", Client['key']).encode(Format)
+    print(Clients)
+    # Client['connection'].send("hi,this is a key", Client['key']).encode(Format)
 
     conected = True
     while conected:
@@ -53,7 +55,7 @@ def server_script():
     while True:
         print('Waiting for CONNECTIONS...')
         connection, address = Server.accept()
-        threading.Thread(target=client_handler, arg=(connection, address))
+        threading.Thread(target=client_handler, args=(connection, address))
         print('total conected users: ', threading.active_count()-1)
 
 

@@ -17,14 +17,17 @@ def getStreamType(s_type):
 
 
 class Socket:
-    def __init__(self, port, host=None, STREAM_TYPE=None):
+    def __init__(self, port, Client=False, host=None, STREAM_TYPE=None):
         self.starting_time = datetime.datetime.now()
         self.host = initiateHost(host)
         self.port = port
         self.address = (self.host, self.port)
-        self.server = socket.socket(
+        self.socket = socket.socket(
             socket.AF_INET, getStreamType(socket.SOCK_STREAM))
-        self.server.bind(self.address)
+        if Client == True:
+            self.socket.connect(self.address)
+        else:
+            self.socket.bind(self.address)
 
     def __str__(self):
         return 'address:' + str(self.address)
@@ -34,9 +37,6 @@ class Socket:
             "host": self.host,
 
         }
-
-    def initServer(self):
-        return self.socket.bind(self.address)
 
     def run_time(self):
         now = datetime.datetime.now()

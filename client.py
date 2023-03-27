@@ -1,6 +1,14 @@
 from Socket import Socket
 
-client_server = Socket(3001).server
+new_client = Socket(5001, True).socket
 
 
-client_server.connect(client_server.a)
+def send_massege(massege):
+    new_client.send(massege)
+
+
+send_massege("hi how are you".encode('utf-8'))
+
+
+while True:
+    pass
