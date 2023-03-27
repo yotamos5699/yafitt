@@ -13,6 +13,7 @@ def getStreamType(s_type):
     if s_type:
         return s_type
     return socket.SOCK_STREAM
+# mashehu
 
 
 class Socket:
