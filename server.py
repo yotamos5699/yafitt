@@ -12,12 +12,13 @@ Server = Socket(5001).server
 
 
 class Client_(TypedDict):
-    key: str
+    key: int
     connection: Any
     address: Any
 
 
 Clients: list[Client_] = []
+# Clients = []
 
 
 def spredMessage(message):
