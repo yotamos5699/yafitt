@@ -11,4 +11,6 @@ send_massege("hi how are you".encode('utf-8'))
 
 
 while True:
+    print(new_client.recv(1024).decode('utf-8'))
     pass
+s
