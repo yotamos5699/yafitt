@@ -5,6 +5,8 @@ ui = Tk()
 my_text = ScrolledText(ui, height=40)
 input_text = Entry(ui, width=10,)
 
+# yafit a homohit
+
 
 def get_prev_messages(user_id):
 
@@ -23,8 +25,6 @@ def build_UI(user_name, user_id):
     my_label.pack()
     my_text.insert(END, get_prev_messages(user_id))
     my_text.pack()
-
-    # text=get_prev_messages(user_id))
 
     my_text.pack()
     my_text.focus()
