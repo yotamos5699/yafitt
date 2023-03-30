@@ -5,16 +5,44 @@ from typing import TypedDict, Any
 from datetime import datetime
 import json
 from threading import Thread, active_count
+from cryptography.fernet import Fernet
+
+
 DISCONECTED_MESSAGE = 'DISCONECTED'
 Format = 'utf-8'
-users = [{
-    'user_id': 892437598274,
-    'user_name': 'moshe',
-    'other_stuff': 'sasdasdasd'
-}]
 
 
+class User_(TypedDict):
+    id: int
+    user_name: str
+    temp_key: Any
+    is_connected: bool
+    password: str
+
+
+class Client_(TypedDict):
+    temp_key: Any
+    connection: Any
+    address: Any
+
+
+# לכתוב טייפ להודעה
+# לטעון קובץ הודעות בתחילת הפונקציה המרכזית למשתנה
+# לעדכן את המשתנה בהודעה חדשה כל פעם שמגיע כזאת
+# לשמור הודעות לדאטה בייס בכל ניתוק לקוח או שרת
+
+
+Clients: list[Client_] = []
+Users: list[User_] = []
+
+
+Messages = []
 Server = Socket(5001).socket
+
+
+def castum_encrypt(message, key):
+    fernet_suit = Fernet(str(key))
+    return fernet_suit.encrypt(message)
 
 
 def save_message_to_db(message, address):
@@ -34,67 +62,71 @@ def save_message_to_db(message, address):
     # להוסיף הודעה לקובץ הגייסון messages
 
 
-class User_(TypedDict):
-    "id": int
-    "user_name": str
-    "temp_key": Any
-    "is_connected": bool
-    "password": str
-
-
-class Client_(TypedDict):
-
-    connection: Any
-    address: Any
-
-
-Clients: list[Client_] = []
-Users: list[User_] = []
-# Clients = []
-
-
 def spredMessage(message):
     for Client in Clients:
-        Client['connection'].send(message.encode(Format))
+        encrypted_message = castum_encrypt(message, Client['temp_key'])
+        Client['connection'].send(str(encrypted_message).encode(Format))
 
 
-def handle_disconect(connection, address):
+def handle_disconect(connection, address, id):
     connection.close()
     for i in range(len(Clients)):
         if Clients[i]['address'] == address:
             del Clients[i]
-
+    for user in Users:
+        if user['id'] == id:
+            user['is_connected'] = False
     # delete client from Clients List based on the address
 
 
-def client_handler(connection, address):
-    Client = {
+def check_password_and_return_data(password):
+    for user in Users:
+        if user['password'] == password:
+            user['is_connected'] = True
+            user['temp_key'] = random.randint(1, 50)
+            return user
+    return False
 
-        "connection": connection,
-        "address": address
-    }
-    Clients.append(Client)
-    print(Clients)
+
+def client_handler(connection, address):
+
     connection.send(
         str({'msg': "hi,this is a key"}).encode(Format))
-
+    User_data = {}
     conected = True
+    loged = False
     while conected:
         print('listing for messages....')
-        message = connection.recv(1024).decode(Format)
-        spredMessage(message)
-        save_message_to_db(message)
-        print('message recivevd....',  message, ' from addres: ', address)
-        if message == DISCONECTED_MESSAGE:
-            print('client disconacted')
-            conected = False
-    handle_disconect(connection, address)
+        if loged == False:
+            message = connection.recv(1024).decode(Format)
+            user_data = check_password_and_return_data(message)
+            if user_data:
+                User_data = user_data
+                loged = True
+                connection.send(str(user_data).encode(Format))
+                Client = {
+                    "user_id": user_data['temp_key'],
+                    "connection": connection,
+                    "address": address
+                }
+                Clients.append(Client)
+        else:
+            message = connection.recv(1024).decode(Format)
+
+            spredMessage(message)
+            save_message_to_db(message)
+            print('message recivevd....',  message, ' from addres: ', address)
+            if message == DISCONECTED_MESSAGE:
+                print('client disconacted')
+                conected = False
+    handle_disconect(connection, address, User_data['id'])
     #  connection.close()
 
 
 def get_users(file_name):
     with open(file_name, 'r') as my_file:
-        return json.load(my_file)
+        data = json.load(my_file)
+        return data
 
 
 def set_users(file_name, users_data):
