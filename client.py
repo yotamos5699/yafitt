@@ -1,11 +1,25 @@
 from Socket import Socket
+from threading import Thread
 from tkinter import *
 from tkinter.scrolledtext import *
-ui = Tk()
-my_text = ScrolledText(ui, height=40)
-input_text = Entry(ui, width=10,)
 
-# yafit a homohit
+
+def handle_login():
+    pass
+
+
+ui = Tk()
+login = Tk()
+my_label1 = Label(login, text="insert password:").pack()
+input_password = Entry(login, width=10).pack()
+login_btn = Button(login, text="login", command=handle_login).pack()
+my_text = ScrolledText(ui, height=40)
+input_text = Entry(ui, width=10)
+is_loged = False
+# new_client = Socket(5001, True).socket
+
+
+# //
 
 
 def get_prev_messages(user_id):
@@ -18,7 +32,7 @@ def send_massege_button():
     # new_client.send()
 
 
-def build_UI(user_name, user_id):
+def build_chat(user_name, user_id):
     # ui.geometry()
     ui.title(user_name+"Chat:")
     my_label = Label(ui, text="Chat:")
@@ -35,10 +49,13 @@ def build_UI(user_name, user_id):
     my_btn.pack(padx=10, pady=10)
 
 
-build_UI('yotam', '09127460920u6o0uieroyn')
-ui.mainloop()
-
-# new_client = Socket(5001, True).socket
+def build_UI():
+    while True:
+        if (is_loged):
+            build_chat('yotam', '23234574')
+            ui.mainloop()
+        else:
+            login.mainloop()
 
 
 # def send_massege(massege):
@@ -48,12 +65,17 @@ ui.mainloop()
 # send_massege("hi how are you".encode('utf-8'))
 
 
-# while True:
-#     pass
-send_massege("hi how are you".encode('utf-8'))
+# def client_script():
+#     send_massege("hi i'm connected".encode('utf-8'))
+#     while True:
+#         print(new_client.recv(1024).decode('utf-8'))
 
 
-while True:
-    print(new_client.recv(1024).decode('utf-8'))
-    pass
-s
+def run_client():
+    # ClientScript = Thread(target=client_script)
+    ClientUi = Thread(target=build_UI)
+    ClientUi.start()
+    # ClientScript.start()
+
+
+run_client()

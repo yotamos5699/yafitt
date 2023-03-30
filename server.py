@@ -1,11 +1,10 @@
 
-import threading
 from Socket import Socket
 import random
 from typing import TypedDict, Any
 from datetime import datetime
 import json
-
+from threading import Thread, active_count
 DISCONECTED_MESSAGE = 'DISCONECTED'
 Format = 'utf-8'
 users = [{
@@ -35,13 +34,22 @@ def save_message_to_db(message, address):
     # להוסיף הודעה לקובץ הגייסון messages
 
 
+class User_(TypedDict):
+    "id": int
+    "user_name": str
+    "temp_key": Any
+    "is_connected": bool
+    "password": str
+
+
 class Client_(TypedDict):
-    key: int
+
     connection: Any
     address: Any
 
 
 Clients: list[Client_] = []
+Users: list[User_] = []
 # Clients = []
 
 
@@ -61,14 +69,14 @@ def handle_disconect(connection, address):
 
 def client_handler(connection, address):
     Client = {
-        "key": random.randint(1, 50),
+
         "connection": connection,
         "address": address
     }
     Clients.append(Client)
     print(Clients)
-    Client['connection'].send(
-        str({'msg': "hi,this is a key", 'key': Client['key']}).encode(Format))
+    connection.send(
+        str({'msg': "hi,this is a key"}).encode(Format))
 
     conected = True
     while conected:
@@ -84,17 +92,28 @@ def client_handler(connection, address):
     #  connection.close()
 
 
-def server_script():
+def get_users(file_name):
+    with open(file_name, 'r') as my_file:
+        return json.load(my_file)
 
+
+def set_users(file_name, users_data):
+    with open(file_name, 'w') as outfile:
+        return json.dump(users_data, outfile)
+
+
+def server_script():
+    Users = get_users('users.json')
     Server.listen()
+
     while True:
         print('Waiting for CONNECTIONS...')
         connection, address = Server.accept()
 
-        new_thred = threading.Thread(
+        new_thred = Thread(
             target=client_handler, args=(connection, address))
         new_thred.start()
-        print('total conected users: ', threading.active_count()-1)
+        print('total conected users: ', active_count()-1)
 
 
 if __name__ == "__main__":
