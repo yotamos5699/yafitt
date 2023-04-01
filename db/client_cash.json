@@ -1,1 +1,1 @@
-"{'user': {'id': 258963147, 'user_name': 'yotam', 'temp_key': 28, 'is_connected': True, 'password': '123', 'connections': 2}, 'messages': []}"
+"{'user': {'id': 258963147, 'user_name': 'yotam', 'temp_key': 14, 'is_connected': True, 'password': '123', 'connections': 1}, 'messages': [{'time_stemp': '', 'owner_id': '123', 'sender': 'yotam', 'message': ''}, {'user_name': 'yizhak', 'message': None, 'temp_key': None}, {'user_name': 'yoni', 'message': None, 'temp_key': None}]}"

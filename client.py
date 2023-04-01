@@ -109,6 +109,7 @@ def run_main_loop():
     c.start()
 
 
+# https: // github.com/yotamos5699/yafitt.git
 # send_massege("hi how are you".encode('utf-8'))
 
 
