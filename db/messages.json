@@ -1,22 +1,19 @@
 [{
-        "time_stemp": "",
+        "time_stemp": "10:50",
         "owner_id": "123",
         "sender": "yotam",
-        "message": ""
-
+        "message": "sssss"
     },
     {
-
-        "user_name": "yizhak",
-        "message": null,
-        "temp_key": null
-
-
+        "time_stemp": "11:22",
+        "owner_id": "123",
+        "sender": "yoni",
+        "message": "hi"
     },
     {
-
-        "user_name": "yoni",
-        "message": null,
-        "temp_key": null
+        "time_stemp": "11:36",
+        "owner_id": "123",
+        "sender": "yizhak",
+        "message": "sss"
     }
 ]

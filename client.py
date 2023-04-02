@@ -3,11 +3,14 @@ from Socket import Socket
 from threading import Thread
 from tkinter import *
 from tkinter.scrolledtext import *
+
 import json
 import time
 from cryptography.fernet import Fernet
-
+from encrypt import castum_decrypt
+import datetime
 from typingClasses import Message_, User_
+DISCONECTED_MESSAGE = 'DISCONECTED'
 
 
 def get_json1(file_name):
@@ -19,11 +22,6 @@ def get_json1(file_name):
 def set_json1(file_name, users_data):
     with open(file_name, 'w') as outfile:
         return json.dump(users_data, outfile)
-
-
-def castum_decrypt(message, key):
-    fernet_suit = Fernet(str(key))
-    return fernet_suit.decrypt(message)
 
 
 new_client = Socket(5001, True).socket
@@ -38,31 +36,57 @@ def send_massege_button():
 
 
 def send_massege(massege):
+
     new_client.send(massege)
 
 
+global isDisconected
+
+
+def handle_window_close():
+    print('in handle close...')
+    new_client.send(DISCONECTED_MESSAGE.encode('utf-8'))
+    new_client.shutdown(2)
+    new_client.close()
+    master_ui.destroy()
+
+
 def run_ui():
+    global master_ui
     master_ui = Tk()
+    global ErrorBox
+
     chat_ui = Frame(master_ui)
     login_ui = Frame(master_ui)
+    ErrorBox = Text(login_ui, height=2, width=10)
+
+    master_ui.protocol("WM_DELETE_WINDOW",  handle_window_close)
 
     def handle_login():
+
         message = input_password.get()
-        print('password: ', message)
         send_massege(input_password.get().encode('utf-8'))
         time.sleep(2)
         data = eval(get_json1('db/client_cash.json'))
 
         print('data in hndle login !!', data, type(data))
-        if data == False:
 
+        if "status" in data:
+            ErrorBox.insert(END, "no data")
+            ErrorBox.pack()
             # להציג הודעה שהלקוח לא קיים
             return
         else:
+
             user: User_ = data['user']
             messages = data['messages']
 
             if user['connections'] > 1:
+                ErrorBox.insert(
+                    END, 'already connected !!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                ErrorBox.pack()
+                print('already connected !!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
                 # להציג הודעה שהלקוח כבר מחובר ממקום אחר
                 return
             print('set chat ui')
@@ -70,7 +94,17 @@ def run_ui():
             master_ui.title(user['user_name']+"Chat:")
             my_label = Label(chat_ui, text="Chat:")
             my_label.pack()
-            my_text.insert(END, messages)
+
+            formatedMessages = ""
+            for message in messages:
+                owner = "ME" if user['user_name'] == message["sender"] else message['sender']
+                print(message, owner, 'user: ',
+                      user['user_name'], 'sender: ', message['sender'])
+                formatedMessages += str(message["time_stemp"] +
+                                        " " + owner + ":" + message["message"] + "\n")
+                # formatedMessages += str(message) + '\n'
+
+            my_text.insert(END, formatedMessages)
             my_text.pack()
             chat_ui.pack()
 
@@ -93,7 +127,8 @@ def run_ui():
 
     my_text.pack()
     my_text.focus()
-    my_btn = Button(chat_ui, text="Send Message:", command=send_massege_button)
+    my_btn = Button(chat_ui, text="Send Message:",
+                    command=send_massege_button)
     my_label_2 = Label(chat_ui, text="Message:", height=3)
     my_label_2.pack()
     input_text.pack()
@@ -119,27 +154,29 @@ def client_script():
     # Thread(target=run_main_loop).start()
     print('client script')
     while True:
+
         print('in client script')
-        result = new_client.recv(1024).decode('utf-8')
+        try:
+            result = new_client.recv(2048).decode('utf-8')
+        except:
+
+            break
         print('got answer', result, 'user ', User,
               'messagesCounter: ', messagesCounter)
-
+        set_json1('db/client_cash.json', "{'status':False}")
         if result and User == None and messagesCounter != 0:
-            print('result and user none', type(result))
             data = eval(result)
-            print(data, type(data))
             User: User_ = data['user']
             set_json1('db/client_cash.json', result)
             Messages: list[Message_] = data['messages']
 
-            print('user: ', User)
-            print('messages: ', Messages)
-
         elif messagesCounter != 0:
-            decrypted_message: Message_ = json.load(
-                castum_decrypt(result, User["temp_key"]))
+
+            decrypted_message: Message_ = eval(castum_decrypt(
+                result, User["temp_key"]))
+            owner = "ME" if User['user_name'] == decrypted_message["sender"] else decrypted_message['sender']
             my_text.insert(
-                END, decrypted_message["time_stemp"]+" " + User["user_name"]+':'+decrypted_message["message"])
+                END, str(decrypted_message["time_stemp"])+" " + owner + ':'+decrypted_message["message"]+"\n")
         messagesCounter += 1
 
 

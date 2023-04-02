@@ -5,7 +5,8 @@ from typing import TypedDict, Any
 from datetime import datetime
 import json
 from threading import Thread, active_count
-from cryptography.fernet import Fernet
+
+from encrypt import castum_encrypt, return_keys
 
 from typingClasses import Client_, Message_, User_
 
@@ -13,15 +14,17 @@ from typingClasses import Client_, Message_, User_
 DISCONECTED_MESSAGE = 'DISCONECTED'
 Format = 'utf-8'
 
-
+keysHash = return_keys()
 # לכתוב טייפ להודעה
 # לטעון קובץ הודעות בתחילת הפונקציה המרכזית למשתנה
 # לעדכן את המשתנה בהודעה חדשה כל פעם שמגיע כזאת
 # לשמור הודעות לדאטה בייס בכל ניתוק לקוח או שרת
 
+
 def get_json1(file_name):
     with open(file_name, 'r') as my_file:
         data = json.load(my_file)
+        print(data)
         return data
 
 
@@ -30,11 +33,6 @@ Users: list[User_] = get_json1('db/users.json')
 Messages: list[Message_] = get_json1('db/messages.json')
 
 Server = Socket(5001).socket
-
-
-def castum_encrypt(message, key):
-    fernet_suit = Fernet(str(key))
-    return fernet_suit.encrypt(message)
 
 
 def save_message_to_kash(message, user: User_):
@@ -52,7 +50,9 @@ def save_message_to_kash(message, user: User_):
 
 def spredMessage(message):
     for Client in Clients:
-        encrypted_message = castum_encrypt(message, Client['temp_key'])
+        print('sending to...', Client)
+        encrypted_message = bytes(castum_encrypt(
+            message, Client['temp_key'])).decode('utf-8')
         Client['connection'].send(str(encrypted_message).encode(Format))
 
 
@@ -61,9 +61,10 @@ def handle_disconect(connection, address, id):
     for i in range(len(Clients)):
         if Clients[i]['address'] == address:
             del Clients[i]
-    for user in Users:
-        if user['id'] == id:
-            user['is_connected'] = False
+    if id:
+        for user in Users:
+            if user['id'] == id:
+                user['is_connected'] = False
     set_json1('messages.json', Messages)
     # delete client from Clients List based on the address
 
@@ -74,7 +75,7 @@ def check_password_and_return_data(password):
         if user['password'] == password:
 
             user['is_connected'] = True
-            user['temp_key'] = random.randint(1, 50)
+            user['temp_key'] = keysHash[random.randint(1, 50)]
             user['connections'] = user['connections'] + 1
             return user
     return False
@@ -91,33 +92,41 @@ def client_handler(connection, address):
         print('listing for messages....')
         if loged == False:
             message = connection.recv(1024).decode(Format)
-            print(message, type(message))
+            if message == DISCONECTED_MESSAGE:
+                print('client disconacted')
+                conected = False
+                break
+
             user_data = check_password_and_return_data(message)
-            print(user_data)
+
             if user_data:
                 User_data = user_data
                 loged = True
                 connection.send(
-                    str({"user": user_data, "messages": Messages}).encode(Format))
+                    str({"user": User_data, "messages": Messages}).encode(Format))
                 Client = {
-                    "user_id": user_data['temp_key'],
+                    "user_id": User_data['temp_key'],
                     "connection": connection,
-                    "address": address
+                    "address": address,
+                    "temp_key": User_data['temp_key']
                 }
                 print('after sending user data')
                 Clients.append(Client)
         else:
-            message = connection.recv(1024).decode(Format)
+            message = connection.recv(2048).decode(Format)
             message_object = save_message_to_kash(message, User_data)
-            spredMessage(str(message_object))
+            spredMessage(message_object)
 
             print('message recivevd....',  message, ' from addres: ', address)
 
             if message == DISCONECTED_MESSAGE:
                 print('client disconacted')
                 conected = False
-
-    handle_disconect(connection, address, User_data['id'])
+                break
+    if loged:
+        handle_disconect(connection, address, User_data['id'])
+    else:
+        handle_disconect(connection, address, False)
     #  connection.close()
 
 
